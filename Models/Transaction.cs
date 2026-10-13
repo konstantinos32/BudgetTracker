@@ -1,7 +1,13 @@
+
+
 namespace BudgetTracker.Models;
 
-public enum TransactionType
+public class Transaction
 {
-    Income,
-    Expense
+    public Guid Id { get; set; }
+    public DateTimeOffset Timestamp { get; set; }
+    public TransactionType Type { get; set; }
+
+    public string Description { get; set; } = string.Empty;
+    public decimal Amount {get; set;}
 }
