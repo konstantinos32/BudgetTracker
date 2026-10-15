@@ -18,3 +18,7 @@ obj/
 
 # Operating system files
 .DS_Store
+
+# Budget Tracker user data
+data/*.json
+logs/*.log
