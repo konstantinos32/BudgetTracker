@@ -53,16 +53,31 @@ public class StorageService
             return new List<Transaction>();
         }
 
-        string json = File.ReadAllText(filePath);
+        return LoadTransactionsFromFile(filePath);
+    }
 
+
+public List<Transaction> LoadTransactionsFromFile(string filePath)
+{
+    string json = File.ReadAllText(filePath);
+
+    try
+    {
         List<Transaction>? transactions =
             JsonSerializer.Deserialize<List<Transaction>>(
                 json,
-                _jsonOptions
-            );
+                _jsonOptions);
 
         return transactions ?? new List<Transaction>();
     }
+    catch (JsonException ex)
+    {
+        throw new InvalidDataException(
+            $"The transaction file '{filePath}' contains invalid JSON.",
+            ex);
+    }
+}
+
 
     public List<string> GetAllTransactionFiles()
     {
