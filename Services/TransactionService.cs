@@ -24,7 +24,15 @@ public class TransactionService
         {
             throw new ArgumentOutOfRangeException(
                 nameof(amount),
-                "Amount must be greater than zero"
+                "Amount must be greater than zero."
+            );
+        }
+
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            throw new ArgumentException(
+                "Description cannot be empty.",
+                nameof(description)
             );
         }
 
@@ -33,7 +41,7 @@ public class TransactionService
             Id = Guid.NewGuid(),
             Timestamp = DateTimeOffset.Now,
             Type = type,
-            Description = description,
+            Description = description.Trim(),
             Amount = amount
         };
 
@@ -75,10 +83,8 @@ public class TransactionService
 
             transactions.Remove(transaction);
 
-            DateTime transactionDate = transaction.Timestamp.Date;
-
-            _storageService.SaveTransactions(
-                transactionDate,
+            _storageService.SaveTransactionsToFile(
+                filePath,
                 transactions
             );
 
@@ -86,6 +92,16 @@ public class TransactionService
         }
 
         return false;
+    }
+
+    public List<Transaction> GetAllTransactions()
+    {
+        return _storageService
+            .GetAllTransactionFiles()
+            .SelectMany(filePath =>
+                _storageService.LoadTransactionsFromFile(filePath))
+            .OrderBy(transaction => transaction.Timestamp)
+            .ToList();
     }
 
     public TransactionReport GetReport(
@@ -99,16 +115,15 @@ public class TransactionService
             );
         }
 
-        List<Transaction> allTransactions = _storageService
-            .GetAllTransactionFiles()
-            .SelectMany(filePath =>
-                _storageService.LoadTransactionsFromFile(filePath))
-            .ToList();
-
-        List<Transaction> filteredTransactions = allTransactions
+        List<Transaction> filteredTransactions = GetAllTransactions()
             .Where(transaction =>
-                DateOnly.FromDateTime(transaction.Timestamp.Date) >= startDate &&
-                DateOnly.FromDateTime(transaction.Timestamp.Date) <= endDate)
+            {
+                DateOnly transactionDate =
+                    DateOnly.FromDateTime(transaction.Timestamp.Date);
+
+                return transactionDate >= startDate &&
+                       transactionDate <= endDate;
+            })
             .ToList();
 
         decimal totalIncome = filteredTransactions

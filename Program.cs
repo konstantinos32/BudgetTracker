@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Globalization;
 using BudgetTracker.Models;
 using BudgetTracker.Services;
 
@@ -28,186 +27,217 @@ while (isRunning)
 
     switch (choice)
     {
+        case "1":
+        {
+            string description = ReadDescription();
+            decimal amount = ReadPositiveAmount();
 
-case "1":
-{
-    string description = ReadDescription();
-    decimal amount = ReadPositiveAmount();
+            try
+            {
+                Transaction transaction = transactionService.AddTransaction(
+                    TransactionType.Income,
+                    description,
+                    amount
+                );
 
-    try
-    {
-        transactionService.AddTransaction(
-            TransactionType.Income,
-            description,
-            amount);
+                Console.WriteLine(
+                    $"Income added successfully: {transaction.Amount.ToString("C", CultureInfo.GetCultureInfo("de-DE"))}"
+                );
+            }
+            catch (InvalidDataException ex)
+            {
+                Console.WriteLine($"Invalid transaction data: {ex.Message}");
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine($"Could not save the transaction: {ex.Message}");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine($"Access denied: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"Invalid transaction: {ex.Message}");
+            }
 
-        Console.WriteLine("Income added successfully.");
-    }
-    catch (IOException ex)
-    {
-        Console.WriteLine(
-            $"Could not save income transaction: {ex.Message}");
-    }
-    catch (UnauthorizedAccessException ex)
-    {
-        Console.WriteLine(
-            $"Permission denied while saving transaction: {ex.Message}");
-    }
+            break;
+        }
 
-    break;
-}
+        case "2":
+        {
+            string description = ReadDescription();
+            decimal amount = ReadPositiveAmount();
 
+            try
+            {
+                Transaction transaction = transactionService.AddTransaction(
+                    TransactionType.Expense,
+                    description,
+                    amount
+                );
 
+                Console.WriteLine(
+                    $"Expense added successfully: {transaction.Amount.ToString("C", CultureInfo.GetCultureInfo("de-DE"))}"
+                );
+            }
+            catch (InvalidDataException ex)
+            {
+                Console.WriteLine($"Invalid transaction data: {ex.Message}");
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine($"Could not save the transaction: {ex.Message}");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine($"Access denied: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"Invalid transaction: {ex.Message}");
+            }
 
-case "2":
-{
-    string description = ReadDescription();
-    decimal amount = ReadPositiveAmount();
-
-    try
-    {
-        transactionService.AddTransaction(
-            TransactionType.Expense,
-            description,
-            amount);
-
-        Console.WriteLine("Expense added successfully.");
-    }
-    catch (IOException ex)
-    {
-        Console.WriteLine(
-            $"Could not save expense transaction: {ex.Message}");
-    }
-    catch (UnauthorizedAccessException ex)
-    {
-        Console.WriteLine(
-            $"Permission denied while saving expense transaction: {ex.Message}");
-    }
-
-    break;
-}
-
+            break;
+        }
 
         case "3":
-{
-    DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+        {
+            try
+            {
+                List<Transaction> transactions =
+                    transactionService.GetAllTransactions();
 
-    TransactionReport report = transactionService.GetReport(
-        today,
-        today);
+                if (transactions.Count == 0)
+                {
+                    Console.WriteLine("No transactions available to remove.");
+                    break;
+                }
 
-    DisplayTransactions(report.Transactions);
+                DisplayTransactions(transactions);
 
-    if (report.Transactions.Count == 0)
-    {
-        break;
-    }
+                Console.Write("Enter the transaction ID to remove: ");
+                string? input = Console.ReadLine();
 
-    Console.Write("Enter the transaction ID to remove: ");
-    string? input = Console.ReadLine();
+                if (!Guid.TryParse(input, out Guid transactionId))
+                {
+                    Console.WriteLine("Invalid transaction ID.");
+                    break;
+                }
 
-    if (!Guid.TryParse(input, out Guid transactionId))
-    {
-        Console.WriteLine("Invalid transaction ID.");
-        break;
-    }
+                bool removed =
+                    transactionService.RemoveTransaction(transactionId);
 
+                if (removed)
+                {
+                    Console.WriteLine("Transaction removed successfully.");
+                }
+                else
+                {
+                    Console.WriteLine("Transaction not found.");
+                }
+            }
+            catch (InvalidDataException ex)
+            {
+                Console.WriteLine(
+                    $"Could not read transaction data: {ex.Message}"
+                );
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine(
+                    $"Could not access transaction files: {ex.Message}"
+                );
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine($"Access denied: {ex.Message}");
+            }
 
+            break;
+        }
 
-try
-{
-    bool removed = transactionService.RemoveTransaction(transactionId);
+        case "4":
+        {
+            DateOnly startDate = ReadDate("Start date (TT.MM.JJJJ): ");
+            DateOnly endDate = ReadDate("End date (TT.MM.JJJJ): ");
 
-    if (removed)
-    {
-        Console.WriteLine("Transaction removed successfully.");
-    }
-    else
-    {
-        Console.WriteLine("Transaction not found.");
-    }
-}
-catch (InvalidDataException ex)
-{
-    Console.WriteLine($"Could not read transaction data: {ex.Message}");
-}
-catch (IOException ex)
-{
-    Console.WriteLine($"Could not access transaction files: {ex.Message}");
-}
-catch (UnauthorizedAccessException ex)
-{
-    Console.WriteLine($"Access denied: {ex.Message}");
-}
+            if (startDate > endDate)
+            {
+                Console.WriteLine(
+                    "The start date cannot be later than the end date."
+                );
+                break;
+            }
 
+            try
+            {
+                TransactionReport report = transactionService.GetReport(
+                    startDate,
+                    endDate
+                );
 
-    break;
-}
+                Console.WriteLine();
+                Console.WriteLine(
+                    $"Report from {startDate:dd.MM.yyyy} to {endDate:dd.MM.yyyy}"
+                );
+                Console.WriteLine("--------------------------------");
 
+                DisplayTransactions(report.Transactions);
 
-case "4":
+                Console.WriteLine("--------------------------------");
+                Console.WriteLine(
+                    $"Total income:   {report.TotalIncome.ToString("C", CultureInfo.GetCultureInfo("de-DE"))}"
+                );
+                Console.WriteLine(
+                    $"Total expenses: {report.TotalExpenses.ToString("C", CultureInfo.GetCultureInfo("de-DE"))}"
+                );
+                Console.WriteLine(
+                    $"Balance:        {report.Balance.ToString("C", CultureInfo.GetCultureInfo("de-DE"))}"
+                );
+            }
+            catch (InvalidDataException ex)
+            {
+                Console.WriteLine(
+                    $"Could not read transaction data: {ex.Message}"
+                );
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine(
+                    $"Could not access transaction files: {ex.Message}"
+                );
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine($"Access denied: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"Invalid report request: {ex.Message}");
+            }
+
+            break;
+        }
+
+        case "5":
 {
     DateOnly startDate = ReadDate("Start date (TT.MM.JJJJ): ");
     DateOnly endDate = ReadDate("End date (TT.MM.JJJJ): ");
 
-    try
+    if (startDate > endDate)
     {
-        TransactionReport report = transactionService.GetReport(
-            startDate,
-            endDate);
-
-        Console.WriteLine();
-        Console.WriteLine("========== REPORT ==========");
-
-        DisplayTransactions(report.Transactions);
-
-        Console.WriteLine("----------------------------");
-        Console.WriteLine($"Total income:   {report.TotalIncome:C}");
-        Console.WriteLine($"Total expenses: {report.TotalExpenses:C}");
-        Console.WriteLine($"Balance:        {report.Balance:C}");
+        Console.WriteLine(
+            "The start date cannot be later than the end date."
+        );
+        break;
     }
 
-
-catch (ArgumentException ex)
-{
-    Console.WriteLine($"Could not generate report: {ex.Message}");
-}
-catch (InvalidDataException ex)
-{
-    Console.WriteLine($"Could not read transaction data: {ex.Message}");
-}
-catch (IOException ex)
-{
-    Console.WriteLine($"Could not read transaction data: {ex.Message}");
-}
-catch (UnauthorizedAccessException ex)
-{
-    Console.WriteLine($"Access denied while reading transaction data: {ex.Message}");
-}
-
-
-
-    break;
-}
-
-
-
-
-case "5":
-{
-    DateOnly startDate = ReadDate("Start date (TT.MM.JJJJ): ");
-DateOnly endDate = ReadDate("End date (TT.MM.JJJJ): ");
-
-if (startDate > endDate)
-{
-    Console.WriteLine(
-        "The start date cannot be later than the end date.");
-    break;
-}
-
+    Console.WriteLine();
+    Console.WriteLine("Choose transaction type:");
     Console.WriteLine("1. Income");
     Console.WriteLine("2. Expense");
-    Console.Write("Choose transaction type: ");
+    Console.Write("Your choice: ");
 
     string? typeChoice = Console.ReadLine();
 
@@ -233,39 +263,47 @@ if (startDate > endDate)
             transactionService.GetTransactionsByType(
                 startDate,
                 endDate,
-                type);
+                type
+            );
 
         Console.WriteLine();
-        Console.WriteLine(
-            $"========== {type.ToString().ToUpper()} TRANSACTIONS ==========");
+        Console.WriteLine($"Transactions of type: {type}");
+        Console.WriteLine("--------------------------------");
 
-        DisplayTransactions(transactions);
+        if (transactions.Count == 0)
+        {
+            Console.WriteLine(
+                "No transactions found for this period."
+            );
+        }
+        else
+        {
+            DisplayTransactions(transactions);
+        }
     }
-
-
-catch (ArgumentException ex)
-{
-    Console.WriteLine($"Could not generate report: {ex.Message}");
-}
-catch (InvalidDataException ex)
-{
-    Console.WriteLine($"Could not read transaction data: {ex.Message}");
-}
-catch (IOException ex)
-{
-    Console.WriteLine($"Could not read transaction data: {ex.Message}");
-}
-catch (UnauthorizedAccessException ex)
-{
-    Console.WriteLine($"Access denied while reading transaction data: {ex.Message}");
-}
-
-
+    catch (InvalidDataException ex)
+    {
+        Console.WriteLine(
+            $"Could not read transaction data: {ex.Message}"
+        );
+    }
+    catch (IOException ex)
+    {
+        Console.WriteLine(
+            $"Could not access transaction files: {ex.Message}"
+        );
+    }
+    catch (UnauthorizedAccessException ex)
+    {
+        Console.WriteLine($"Access denied: {ex.Message}");
+    }
+    catch (ArgumentException ex)
+    {
+        Console.WriteLine($"Invalid report request: {ex.Message}");
+    }
 
     break;
 }
-
-
 
         case "0":
             isRunning = false;
@@ -273,12 +311,12 @@ catch (UnauthorizedAccessException ex)
             break;
 
         default:
-            Console.WriteLine("Invalid option. Please choose 0–5.");
+            Console.WriteLine("Invalid option. Please try again.");
             break;
     }
 }
 
-static string ReadDescription()
+string ReadDescription()
 {
     while (true)
     {
@@ -294,7 +332,7 @@ static string ReadDescription()
     }
 }
 
-static decimal ReadPositiveAmount()
+decimal ReadPositiveAmount()
 {
     while (true)
     {
@@ -302,10 +340,11 @@ static decimal ReadPositiveAmount()
         string? input = Console.ReadLine();
 
         if (decimal.TryParse(
-            input,
-            NumberStyles.Number,
-            CultureInfo.CurrentCulture,
-            out decimal amount) && amount > 0)
+                input,
+                NumberStyles.Number,
+                CultureInfo.CurrentCulture,
+                out decimal amount)
+            && amount > 0)
         {
             return amount;
         }
@@ -314,27 +353,7 @@ static decimal ReadPositiveAmount()
     }
 }
 
-static void DisplayTransactions(List<Transaction> transactions)
-{
-    if (transactions.Count == 0)
-    {
-        Console.WriteLine("No transactions found.");
-        return;
-    }
-
-    foreach (Transaction transaction in transactions)
-    {
-        Console.WriteLine(
-            $"ID: {transaction.Id} | " +
-            $"{transaction.Timestamp:dd.MM.yyyy HH:mm} | " +
-            $"{transaction.Type} | " +
-            $"{transaction.Description} | " +
-            $"{transaction.Amount:C}");
-    }
-}
-
-
-static DateOnly ReadDate(string prompt)
+DateOnly ReadDate(string prompt)
 {
     while (true)
     {
@@ -352,6 +371,27 @@ static DateOnly ReadDate(string prompt)
         }
 
         Console.WriteLine(
-            "Invalid date. Please use the format TT.MM.JJJJ, for example 01.10.2026.");
+            "Invalid date. Please use the format TT.MM.JJJJ, for example 23.10.2026."
+        );
+    }
+}
+
+void DisplayTransactions(List<Transaction> transactions)
+{
+    if (transactions.Count == 0)
+    {
+        Console.WriteLine("No transactions found.");
+        return;
+    }
+
+    foreach (Transaction transaction in transactions)
+    {
+        Console.WriteLine(
+            $"ID: {transaction.Id} | " +
+            $"{transaction.Timestamp:dd.MM.yyyy HH:mm} | " +
+            $"{transaction.Type} | " +
+            $"{transaction.Description} | " +
+            $"{transaction.Amount.ToString("C", CultureInfo.GetCultureInfo("de-DE"))}"
+        );
     }
 }
