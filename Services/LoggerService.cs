@@ -1,5 +1,5 @@
-using BudgetTracker.Models;
 using BudgetTracker.Events;
+using BudgetTracker.Models;
 
 namespace BudgetTracker.Services;
 
@@ -18,40 +18,42 @@ public class LoggerService
 
         _logFilePath = Path.Combine(
             logsDirectory,
-            "transactions.log");
+            "transactions.log"
+        );
 
         _transactionService.TransactionAdded += OnTransactionAdded;
     }
 
-
-private void OnTransactionAdded(
-    object? sender,
-    TransactionAddedEventArgs e)
-{
-    Transaction transaction = e.Transaction;
-
-    string logEntry =
-        $"{transaction.Timestamp:O} | " +
-        $"{transaction.Type} | " +
-        $"{transaction.Description} | " +
-        $"{transaction.Amount}";
-
-    try
+    private void OnTransactionAdded(
+        object? sender,
+        TransactionAddedEventArgs e)
     {
-        File.AppendAllText(
-            _logFilePath,
-            logEntry + Environment.NewLine);
-    }
-    catch (IOException ex)
-    {
-        Console.Error.WriteLine(
-            $"Warning: The transaction was saved, but logging failed: {ex.Message}");
-    }
-    catch (UnauthorizedAccessException ex)
-    {
-        Console.Error.WriteLine(
-            $"Warning: The transaction was saved, but the log file could not be accessed: {ex.Message}");
-    }
-}
+        Transaction transaction = e.Transaction;
 
+        string logEntry =
+            $"{transaction.Timestamp:O} | " +
+            $"{transaction.Type} | " +
+            $"{transaction.Description} | " +
+            $"{transaction.Amount}";
+
+        try
+        {
+            File.AppendAllText(
+                _logFilePath,
+                logEntry + Environment.NewLine
+            );
+        }
+        catch (IOException ex)
+        {
+            Console.Error.WriteLine(
+                $"Warning: The transaction was saved, but logging failed: {ex.Message}"
+            );
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Console.Error.WriteLine(
+                $"Warning: The transaction was saved, but the log file could not be accessed: {ex.Message}"
+            );
+        }
+    }
 }
