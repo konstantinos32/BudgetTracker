@@ -2,9 +2,30 @@
 using BudgetTracker.Models;
 using BudgetTracker.Services;
 
-var storageService = new StorageService("data");
-var transactionService = new TransactionService(storageService);
-var loggerService = new LoggerService(transactionService, "logs");
+StorageService storageService;
+TransactionService transactionService;
+LoggerService loggerService;
+
+try
+{
+    storageService = new StorageService("data");
+    transactionService = new TransactionService(storageService);
+    loggerService = new LoggerService(transactionService, "logs");
+}
+catch (UnauthorizedAccessException ex)
+{
+    Console.Error.WriteLine(
+        $"Startup failed: Access denied while creating application directories. {ex.Message}"
+    );
+    return;
+}
+catch (IOException ex)
+{
+    Console.Error.WriteLine(
+        $"Startup failed: Could not access the application directories. {ex.Message}"
+    );
+    return;
+}
 
 bool isRunning = true;
 
