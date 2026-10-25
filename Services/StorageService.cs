@@ -36,6 +36,13 @@ public class StorageService
     {
         string filePath = GetFilePath(transactionDate);
 
+        SaveTransactionsToFile(filePath, transactions);
+    }
+
+    public void SaveTransactionsToFile(
+        string filePath,
+        List<Transaction> transactions)
+    {
         string json = JsonSerializer.Serialize(
             transactions,
             _jsonOptions
@@ -56,28 +63,28 @@ public class StorageService
         return LoadTransactionsFromFile(filePath);
     }
 
-
-public List<Transaction> LoadTransactionsFromFile(string filePath)
-{
-    string json = File.ReadAllText(filePath);
-
-    try
+    public List<Transaction> LoadTransactionsFromFile(string filePath)
     {
-        List<Transaction>? transactions =
-            JsonSerializer.Deserialize<List<Transaction>>(
-                json,
-                _jsonOptions);
+        string json = File.ReadAllText(filePath);
 
-        return transactions ?? new List<Transaction>();
-    }
-    catch (JsonException ex)
-    {
-        throw new InvalidDataException(
-            $"The transaction file '{filePath}' contains invalid JSON.",
-            ex);
-    }
-}
+        try
+        {
+            List<Transaction>? transactions =
+                JsonSerializer.Deserialize<List<Transaction>>(
+                    json,
+                    _jsonOptions
+                );
 
+            return transactions ?? new List<Transaction>();
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidDataException(
+                $"The transaction file '{filePath}' contains invalid JSON.",
+                ex
+            );
+        }
+    }
 
     public List<string> GetAllTransactionFiles()
     {
