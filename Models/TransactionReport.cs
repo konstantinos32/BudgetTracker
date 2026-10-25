@@ -1,5 +1,3 @@
-using System.Dynamic;
-
 namespace BudgetTracker.Models;
 
 public class TransactionReport
